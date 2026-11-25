@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pedidos de ajuda claros</title>
+  <style>
+    body { max-width: 760px; margin: 32px auto; padding: 0 16px; font-family: Arial, sans-serif; color: #202b27; background: #f4f4ed; }
+    section { background: white; border: 1px solid #dce1d8; border-radius: 8px; padding: 20px; margin-bottom: 16px; }
+    label { display: block; margin: 12px 0 6px; font-weight: bold; }
+    input, textarea { width: 100%; box-sizing: border-box; border: 1px solid #dce1d8; border-radius: 5px; padding: 10px; font: inherit; }
+    textarea { min-height: 76px; resize: vertical; }
+    button { min-height: 44px; margin-top: 12px; border: 0; border-radius: 5px; padding: 0 16px; background: #176b50; color: white; font: inherit; cursor: pointer; }
+    .error { color: #a31d24; font-weight: bold; }
+    pre { white-space: pre-wrap; background: #f7f8f3; border: 1px solid #dce1d8; border-radius: 5px; padding: 14px; }
+  </style>
+</head>
+<body>
+  <h1>Pedido de ajuda assíncrono</h1>
+  <section>
+    <form id="help-form">
+      <label for="want">O que eu quero fazer</label>
+      <input id="want" required>
+      <label for="happening">O que está acontecendo</label>
+      <textarea id="happening" required></textarea>
+      <label for="where">Onde (arquivo, tela ou rota)</label>
+      <input id="where" required>
+      <label for="tried">O que já tentei</label>
+      <textarea id="tried" required minlength="20"></textarea>
+      <label for="need">O que preciso de você</label>
+      <textarea id="need" required></textarea>
+      <button type="submit">Formatar pedido</button>
+      <p id="error" class="error" role="alert"></p>
+    </form>
+  </section>
+  <section id="output" hidden>
+    <h2>Mensagem pronta</h2>
+    <pre id="message"></pre>
+    <button id="copy" type="button">Copiar mensagem</button>
+  </section>
+  <script>
+    const form = document.querySelector("#help-form");
+    const error = document.querySelector("#error");
+    const output = document.querySelector("#output");
+    const message = document.querySelector("#message");
+    const copy = document.querySelector("#copy");
+
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const tried = document.querySelector("#tried").value.trim();
+      if (tried.length < 20) {
+        error.textContent = "O campo \"O que já tentei\" precisa ter pelo menos 20 caracteres.";
+        output.hidden = true;
+        return;
+      }
+      error.textContent = "";
+      message.textContent =
+        `O que quero fazer: ${document.querySelector("#want").value.trim()}\n` +
+        `O que está acontecendo: ${document.querySelector("#happening").value.trim()}\n` +
+        `Onde: ${document.querySelector("#where").value.trim()}\n` +
+        `O que já tentei: ${tried}\n` +
+        `O que preciso de você: ${document.querySelector("#need").value.trim()}`;
+      output.hidden = false;
+    });
+
+    copy.addEventListener("click", async () => {
+      await navigator.clipboard.writeText(message.textContent);
+      copy.textContent = "Mensagem copiada";
+    });
+  </script>
+</body>
+</html>

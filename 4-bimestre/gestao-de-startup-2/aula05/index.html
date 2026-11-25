@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Priorizador Estudaí</title>
+  <style>
+    body { max-width: 900px; margin: 32px auto; padding: 0 16px; font-family: Arial, sans-serif; color: #202b27; background: #f4f4ed; }
+    section { background: white; border: 1px solid #dce1d8; border-radius: 8px; padding: 20px; margin-bottom: 16px; }
+    form { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr; gap: 8px; }
+    input, select, button { min-height: 42px; border: 1px solid #dce1d8; border-radius: 5px; padding: 8px; font: inherit; }
+    button { background: #176b50; color: white; cursor: pointer; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { border-bottom: 1px solid #dce1d8; padding: 10px 8px; text-align: left; }
+    .wonot { color: #8f1d26; font-weight: bold; }
+    @media (max-width: 700px) { form { grid-template-columns: 1fr; } table { font-size: 0.85rem; } }
+  </style>
+</head>
+<body>
+  <h1>Priorizador do Estudaí</h1>
+  <section>
+    <h2>Novo item do backlog</h2>
+    <form id="item-form">
+      <input id="title" required placeholder="Título">
+      <select id="moscow" required>
+        <option value="Must">Must</option>
+        <option value="Should">Should</option>
+        <option value="Could">Could</option>
+        <option value="Won't">Won't</option>
+      </select>
+      <input id="reach" type="number" min="0" required placeholder="Alcance">
+      <select id="impact" required><option value="1">Impacto 1</option><option value="2">Impacto 2</option><option value="3">Impacto 3</option></select>
+      <input id="effort" type="number" min="1" required placeholder="Esforço">
+    </form>
+    <button type="submit" form="item-form" style="margin-top:8px">Adicionar item</button>
+  </section>
+  <section>
+    <h2>Backlog ordenado por RICE</h2>
+    <table>
+      <thead><tr><th>Item</th><th>MoSCoW</th><th>Alcance</th><th>Impacto</th><th>Esforço</th><th>RICE</th></tr></thead>
+      <tbody id="backlog"></tbody>
+    </table>
+  </section>
+  <section>
+    <h2>ADR da decisão prioritária</h2>
+    <div id="adr"></div>
+  </section>
+  <script>
+    const KEY = "estudai-backlog";
+    const form = document.querySelector("#item-form");
+    const tbody = document.querySelector("#backlog");
+    const adr = document.querySelector("#adr");
+    const defaultItems = [
+      { title: "Corrigir erro 500 ao cadastrar pedido", moscow: "Must", reach: 200, impact: 3, effort: 2 },
+      { title: "Criar relatório em PDF", moscow: "Won't", reach: 15, impact: 2, effort: 8 },
+      { title: "Simplificar o cadastro e o primeiro acesso", moscow: "Must", reach: 20, impact: 3, effort: 3 },
+      { title: "Adicionar busca por nome", moscow: "Should", reach: 30, impact: 2, effort: 2 },
+      { title: "Trocar as cores do sistema", moscow: "Could", reach: 10, impact: 1, effort: 2 }
+    ];
+
+    function readItems() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(KEY));
+        return Array.isArray(saved) ? saved : defaultItems;
+      } catch {
+        return defaultItems;
+      }
+    }
+
+    function saveItems(items) {
+      localStorage.setItem(KEY, JSON.stringify(items));
+    }
+
+    function rice(item) {
+      return (item.reach * item.impact) / item.effort;
+    }
+
+    function render() {
+      const items = readItems().sort((a, b) => rice(b) - rice(a));
+      tbody.innerHTML = items.map((item) => `
+        <tr>
+          <td>${item.title}</td>
+          <td class="${item.moscow === "Won't" ? "wonot" : ""}">${item.moscow}</td>
+          <td>${item.reach}</td>
+          <td>${item.impact}</td>
+          <td>${item.effort}</td>
+          <td><strong>${rice(item) % 1 === 0 ? rice(item) : rice(item).toFixed(2)}</strong></td>
+        </tr>`).join("");
+
+      const first = items[0];
+      adr.innerHTML = first ? `
+        <h3>ADR 001 — ${first.title}</h3>
+        <p><strong>Contexto:</strong> o funil mostrou perda na ativação e a equipe precisa priorizar uma ação verificável.</p>
+        <p><strong>Decisão:</strong> tratar o item "${first.title}" antes dos demais itens do backlog.</p>
+        <p><strong>Consequências:</strong></p>
+        <ul><li>Melhora a métrica acionável vinculada ao primeiro uso.</li><li>Uma funcionalidade nova pode ficar para depois.</li></ul>
+        <p><strong>Status:</strong> aceita</p>` : "";
+    }
+
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const items = readItems();
+      items.push({
+        title: document.querySelector("#title").value.trim(),
+        moscow: document.querySelector("#moscow").value,
+        reach: Number(document.querySelector("#reach").value),
+        impact: Number(document.querySelector("#impact").value),
+        effort: Number(document.querySelector("#effort").value)
+      });
+      saveItems(items);
+      form.reset();
+      render();
+    });
+
+    render();
+  </script>
+</body>
+</html>
